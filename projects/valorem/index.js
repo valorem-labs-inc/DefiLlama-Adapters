@@ -1,19 +1,20 @@
-const { ethers } = require("ethers");
+// const { ethers, BigNumber } = require("ethers");
 const { sumTokensExport } = require("../helper/unwrapLPs");
 
 // TODO: Currently using my wallet address as we have yet to deploy to a supported chain
 const EOA_ADDRESS = "0xf97752a24D83478acA43B04EF7b28789e1D7EEda";
 
-const OSE_ADDRESS = "0x46c8F67675A3C95cA4D21c282A207D87829C56AA";
+// const OSE_ADDRESS = "0x46c8F67675A3C95cA4D21c282A207D87829C56AA";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 const TOKENS_BY_CHAIN = {
-  ["goerli"]: {
-    WETH: "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6",
-    DAI: "0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60",
-    UNI: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
-  },
+  // ["goerli"]: {
+  //   ETH: ZERO_ADDRESS,
+  //   WETH: "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6",
+  //   DAI: "0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60",
+  //   UNI: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+  // },
   ["ethereum"]: {
     ETH: ZERO_ADDRESS,
     WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
@@ -36,9 +37,6 @@ const TOKENS_BY_CHAIN = {
 module.exports = {
   methodology:
     "TVL counts all of the tokens locked in the Option Settlement Engine for Option/Claim positions.",
-  // goerli: {
-  //   tvl,
-  // },
   ethereum: {
     tvl: sumTokensExport({
       chain: "ethereum",
@@ -53,79 +51,105 @@ module.exports = {
       tokens: [...Object.values(TOKENS_BY_CHAIN["arbitrum"])],
     }),
   },
+  // goerli: {
+  //   tvl,
+  // },
   hallmarks: [
     // [blockNumber, "eventName, ex: Mainnet Launch"]
   ],
 };
 
 // used to mock response for goerli, will remove and replace with sumTokensExport
-async function tvl(_unixTimestamp, ethBlock, _chainBlocks, { chain }) {
-  const provider = new ethers.providers.JsonRpcProvider(
-    "https://rpc.ankr.com/eth_goerli",
-    5
-  );
+// async function tvl(_unixTimestamp, ethBlock, _chainBlocks, { chain }) {
+//   const provider = new ethers.providers.JsonRpcProvider(
+//     "https://rpc.ankr.com/eth_goerli",
+//     5
+//   );
 
-  const ethBalance = (
-    await provider.getBalance(
-      chain === "goerli" ? OSE_ADDRESS : EOA_ADDRESS,
-      ethBlock
-    )
-  ).toString();
+//   const ethBalance = (
+//     await provider.getBalance(
+//       chain === "goerli" ? OSE_ADDRESS : EOA_ADDRESS,
+//       ethBlock
+//     )
+//   ).toString();
 
-  const tokens = TOKENS_BY_CHAIN[chain];
-  const promises = Object.entries(tokens).map(
-    async ([_symbol, tokenAddress]) => {
-      const balance = await getERC20Balance(
-        provider,
-        tokenAddress,
-        ethBlock,
-        chain
-      );
-      return { tokenAddress, balance };
-    }
-  );
+//   const tokens = TOKENS_BY_CHAIN[chain];
+//   const promises = Object.entries(tokens).map(
+//     async ([_symbol, tokenAddress]) => {
+//       if (tokenAddress === ZERO_ADDRESS) return undefined;
+//       const balance = await getERC20Balance(
+//         provider,
+//         tokenAddress,
+//         ethBlock,
+//         chain,
+//         _symbol
+//       );
+//       return { tokenAddress, balance };
+//     }
+//   );
 
-  let erc20Balances = {};
+//   let erc20Balances = {};
+//   await Promise.all(promises).then((results) =>
+//     results
+//       .filter((x) => x !== undefined)
+//       .forEach((res) => {
+//         try {
+//           const { tokenAddress, balance } = res.value;
+//           erc20Balances[`${chain}:${tokenAddress}`] = balance;
+//         } catch (error) {
+//           //
+//         }
+//       })
+//   );
 
-  await Promise.allSettled(promises).then((results) =>
-    results.forEach((res) => {
-      try {
-        const { tokenAddress, balance } = res.value;
-        erc20Balances[`${chain}:${tokenAddress}`] = balance;
-      } catch (error) {
-        //
-      }
-    })
-  );
+//   const balances = {
+//     [`${chain}:${ZERO_ADDRESS}`]: ethBalance,
+//     ...erc20Balances,
+//   };
 
-  const balances = {
-    [`${chain}:${ZERO_ADDRESS}`]: ethBalance,
-    ...erc20Balances,
-  };
+//   console.log({ balances });
 
-  console.log({ balances });
+//   return balances;
+// }
 
-  return balances;
-}
+// async function getERC20Balance(
+//   provider,
+//   tokenAddress,
+//   _ethBlock,
+//   chain,
+//   _symbol
+// ) {
+//   const contract = new ethers.Contract(
+//     tokenAddress,
+//     [
+//       "function balanceOf(address) view returns (uint256)",
+//       "function decimals() view returns (uint8)",
+//     ],
+//     provider
+//   );
+//   let decimals;
+//   if (_symbol === "USDC") {
+//     decimals = 6;
+//   } else {
+//     try {
+//       decimals = (await contract.decimals()).toString();
+//     } catch (error) {
+//       decimals = 18;
+//       // console.log("DECIMAL=18", chain, _symbol);
+//     }
+//   }
+//   let balance;
+//   try {
+//     balance = await contract.balanceOf(
+//       chain === "goerli" ? OSE_ADDRESS : EOA_ADDRESS,
+//       { blockTag: _ethBlock }
+//     );
+//   } catch (error) {
+//     balance = BigNumber.from(0);
+//     // console.log("BALANCE=0: ", chain, _symbol);
+//   }
+//   const formattedBalance = Number(ethers.utils.formatUnits(balance, decimals));
+//   // console.log({ _symbol, decimals, formattedBalance });
 
-async function getERC20Balance(provider, tokenAddress, _ethBlock, chain) {
-  const contract = new ethers.Contract(
-    tokenAddress,
-    [
-      "function balanceOf(address owner) view returns (uint256)",
-      "function decimals() view returns (uint8)",
-    ],
-    provider
-  );
-
-  const decimals = (await contract.decimals()).toString();
-  const balance = await contract.balanceOf(
-    chain === "goerli" ? OSE_ADDRESS : EOA_ADDRESS
-    // { blockTag: _ethBlock }
-  );
-
-  const formattedBalance = ethers.utils.formatUnits(balance, decimals);
-  // console.log({ decimals, balance, formattedBalance });
-
-  return formattedBalance;
-}
+//   return formattedBalance;
+// }
