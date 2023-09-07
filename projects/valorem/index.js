@@ -1,4 +1,3 @@
-// const { ethers, BigNumber } = require("ethers");
 const { sumTokensExport } = require("../helper/unwrapLPs");
 
 const CLEARINGHOUSE_ADDRESS = "0x402A401B1944EBb5A3030F36Aa70d6b5794190c9";
@@ -19,7 +18,7 @@ module.exports = {
   arbitrum: {
     tvl: sumTokensExport({
       chain: "arbitrum",
-      owner: CLEARINGHOUSE_ADDRESS, // TODO: OSE
+      owner: CLEARINGHOUSE_ADDRESS,
       tokens: [...Object.values(TOKENS_BY_CHAIN["arbitrum"])],
     }),
   },
